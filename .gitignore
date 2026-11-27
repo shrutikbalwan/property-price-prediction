@@ -1,0 +1,28 @@
+__pycache__/
+*.py[cod]
+.venv/
+.venv*/
+venv/
+env/
+tmp/
+pytest-cache-files-*/
+.coverage
+htmlcov/
+.idea/
+.vscode/
+*.pem
+*.key
+*.p12
+*.pfx
+# Generated data artifacts remain local until redistribution review.
+outputs/
+verification/
+/*.ipynb
+/*.html
+.pytest_cache/
+.env
+.env.*
+!.env.example
+*.log
+# Raw source redistribution has not been confirmed.
+datasets/*.xlsx

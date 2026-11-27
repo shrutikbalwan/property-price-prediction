@@ -1,0 +1,71 @@
+"""Loopback-only prediction application. Run: python -m ml_projects.app --port 8501."""
+import argparse,csv,io,json,logging,threading
+from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
+from urllib.parse import urlsplit
+from .advanced import ROOT,OUT,PROJECT,load_artifact,predict
+
+LOG=logging.getLogger(__name__)
+
+def csv_records(text):
+    if not isinstance(text,str): raise ValueError('CSV must be text')
+    reader=csv.DictReader(io.StringIO(text.lstrip("\ufeff")))
+    if not reader.fieldnames or len(set(reader.fieldnames))!=len(reader.fieldnames): raise ValueError('CSV requires unique column headers')
+    records=[]
+    for row in reader:
+        if None in row or any(value is None for value in row.values()): raise ValueError('CSV row does not match its headers')
+        records.append(row)
+        if len(records)>5000: raise ValueError('Maximum 5000 rows per request')
+    return records
+
+def create_server(port=8501):
+    artifact=load_artifact(); summary=json.loads((OUT/'summary.json').read_text())
+    sample=csv_records((OUT/'example_inputs.csv').read_text())
+    lock=threading.Lock()
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self,format,*args): LOG.info('%s %s',self.command,self.path)
+        def reply(self,status,body,content_type='application/json'):
+            if not isinstance(body,bytes): body=json.dumps(body,allow_nan=False).encode()
+            self.send_response(status); self.send_header('Content-Type',content_type); self.send_header('Content-Length',str(len(body)))
+            self.send_header('Cache-Control','no-store'); self.send_header('X-Content-Type-Options','nosniff'); self.send_header('X-Frame-Options','DENY'); self.end_headers(); self.wfile.write(body)
+        def allowed(self):
+            host=self.headers.get('Host','')
+            allowed={f'127.0.0.1:{self.server.server_port}',f'localhost:{self.server.server_port}'}
+            origin=self.headers.get('Origin')
+            if host not in allowed or (origin and origin not in {'http://'+h for h in allowed}):
+                self.reply(403,{'error':'This application accepts local same-origin requests only'}); return False
+            return True
+        def do_GET(self):
+            if not self.allowed(): return
+            path=urlsplit(self.path).path
+            if path=='/api/health': self.reply(200,{'status':'ok','project':PROJECT})
+            elif path=='/api/schema': self.reply(200,{'project':PROJECT,'schema':artifact['schema'],'sample':sample[0],'summary':summary})
+            elif path=='/example.csv': self.reply(200,(OUT/'example_inputs.csv').read_bytes(),'text/csv; charset=utf-8')
+            elif path in {'/','/app.js','/style.css'}:
+                name={'/':'index.html','/app.js':'app.js','/style.css':'style.css'}[path]
+                mime={'/':'text/html','/app.js':'text/javascript','/style.css':'text/css'}[path]
+                self.reply(200,(ROOT/'web'/name).read_bytes(),mime+'; charset=utf-8')
+            else: self.reply(404,{'error':'Not found'})
+        def do_POST(self):
+            if not self.allowed(): return
+            if urlsplit(self.path).path!='/api/predict': self.reply(404,{'error':'Not found'}); return
+            try:
+                length=int(self.headers.get('Content-Length','0'))
+                if length<=0 or length>2_000_000: self.reply(413,{'error':'Request must be between 1 byte and 2 MB'}); return
+                if self.headers.get_content_type()!='application/json': self.reply(415,{'error':'Send application/json'}); return
+                payload=json.loads(self.rfile.read(length))
+                if not isinstance(payload,dict): raise ValueError('Request must be an object')
+                records=csv_records(payload['csv']) if 'csv' in payload else payload.get('records')
+                with lock: result=predict(artifact,records,payload.get('threshold'))
+                self.reply(200,result)
+            except (ValueError,TypeError,KeyError,OverflowError) as exc: self.reply(422,{'error':str(exc)})
+            except Exception:
+                LOG.exception('Prediction failed'); self.reply(500,{'error':'Prediction failed; inspect the local server log'})
+    return ThreadingHTTPServer(('127.0.0.1',port),Handler)
+
+if __name__=='__main__':
+    parser=argparse.ArgumentParser(); parser.add_argument('--port',type=int,default=8501); args=parser.parse_args()
+    logging.basicConfig(level=logging.INFO,format='%(levelname)s %(message)s')
+    server=create_server(args.port); print(f'Open http://127.0.0.1:{server.server_port}',flush=True)
+    try: server.serve_forever()
+    except KeyboardInterrupt: pass
+    finally: server.server_close()

@@ -1,0 +1,8 @@
+{
+  "seed": 42,
+  "cv_folds": 3,
+  "boosting_iterations": 150,
+  "interval_coverage": 0.9,
+  "target_validation_recall": 0.8,
+  "bootstrap_repeats": 200
+}
