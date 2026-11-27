@@ -35,11 +35,12 @@ in [README.md](../README.md), including its historical results and limitations.
 
 | Time | Show | Explain |
 |---|---|---|
-| 0?10 s | Title and synthetic label | Introduce the project and explicitly identify the fictional demo. |
-| 10?25 s | Inputs and result | Show validation and how a record moves through the local API. |
-| 25?40 s | CSV workflow | Explain the template, batch limit and marked downloads. |
-| 40?50 s | Demo explanation | Show the formula; distinguish it from the trained pipeline. |
-| 50?60 s | README results | Describe the actual study, evaluation limits and reproducibility. |
+| 0-10 s | Title and synthetic label | Introduce the project and explicitly identify the fictional demo. |
+| 10-25 s | Inputs and result | Show validation and how a record moves through the local API. |
+| 25-40 s | CSV workflow | Explain the template, batch limit and marked downloads. |
+| 40-50 s | Demo explanation | Show the formula; distinguish it from the trained pipeline. |
+| 50-60 s | README results | Describe the actual study, evaluation limits and reproducibility. |
 
-Keep the synthetic label visible when recording. This is an illustrated guide
-and recording script, not a recorded video.
+Keep the synthetic label visible when recording. Watch the [captioned screenshot video](videos/synthetic-demo.mp4) or read its
+[transcript](videos/TRANSCRIPT.md). The video is assembled from captured screens;
+it is not a live interaction recording.

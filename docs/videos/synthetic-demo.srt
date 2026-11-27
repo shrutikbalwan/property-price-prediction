@@ -1,0 +1,24 @@
+1
+00:00:00,000 --> 00:00:08,000
+Explore the interface without the original dataset.
+This walkthrough uses captured demo screens and invented formulas.
+
+2
+00:00:08,000 --> 00:00:20,000
+Start with the example inputs, then change values within range.
+No dataset, trained model, account or API key is needed.
+
+3
+00:00:20,000 --> 00:00:35,000
+The example returns 145,000 fictional units.
+This is a formula output, not a learned real-world prediction.
+
+4
+00:00:35,000 --> 00:00:50,000
+Batch workflow: download the example CSV, choose it, then analyze.
+The screen shows controls before upload. Exports are marked synthetic_demo.
+
+5
+00:00:50,000 --> 00:01:00,000
+Historical geographic evaluation is separate from this demo.
+Read README.md for the separate trained study and its limitations.

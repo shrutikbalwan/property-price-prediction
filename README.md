@@ -2,11 +2,19 @@
 
 Explore regression models for aggregate house values, inspect uncertainty intervals, and stress-test performance across geographic areas.
 
-[Quick demo](DEMO.md) ? [Study findings](PROPERTY_GEOGRAPHIC_FINDINGS.md) ? [Model card](MODEL_CARD.md) ? [Reproduce](GITHUB_PREPARATION.md) ? [CI](https://github.com/shrutikbalwan/property-price-prediction/actions)
+[Quick demo](DEMO.md) | [Study findings](PROPERTY_GEOGRAPHIC_FINDINGS.md) | [Model card](MODEL_CARD.md) | [Reproduce](GITHUB_PREPARATION.md) | [CI](https://github.com/shrutikbalwan/property-price-prediction/actions)
 
 ![Actual synthetic-demo input form and result](docs/screenshots/demo-result.jpg)
 
 *Actual app screenshot using invented formulas. Demo outputs are not trained-model predictions.*
+
+## Video walkthrough
+
+[Watch or download the 60-second MP4](docs/videos/synthetic-demo.mp4) | [Transcript](docs/videos/TRANSCRIPT.md) | [Subtitles](docs/videos/synthetic-demo.srt)
+
+A silent, captioned walkthrough assembled from actual synthetic-demo screenshots.
+It shows the input form, fictional example result and batch controls. It is not
+a live interaction recording or evidence of trained-model performance.
 
 ## Quick start
 
@@ -46,7 +54,7 @@ Missing trained artifacts cause an explicit error; there is no silent fallback.
 |---|---:|
 | RMSE | 47,623.11 |
 | MAE | 31,794.08 |
-| R? | 0.8269 |
+| R-squared | 0.8269 |
 | Marginal interval coverage | 90.41% |
 
 The original test set was inspected during earlier development. These are
