@@ -17,9 +17,21 @@ def csv_records(text):
         if len(records)>5000: raise ValueError('Maximum 5000 rows per request')
     return records
 
-def create_server(port=8501):
-    artifact=load_artifact(); summary=json.loads((OUT/'summary.json').read_text())
-    sample=csv_records((OUT/'example_inputs.csv').read_text())
+def create_server(port=8501, demo=False):
+    mode='synthetic_demo' if demo else 'trained_model'
+    if demo:
+        from .demo import demo_bundle, demo_predict
+        schema, example, summary, example_csv=demo_bundle(PROJECT)
+        sample=[example]
+        run_prediction=lambda records, threshold: demo_predict(PROJECT,schema,example,records,threshold)
+    else:
+        try:
+            artifact=load_artifact(); summary=json.loads((OUT/'summary.json').read_text())
+            example_csv=(OUT/'example_inputs.csv').read_bytes()
+        except FileNotFoundError as exc:
+            raise FileNotFoundError('Trained artifacts are missing. Run with --demo for the fictional simulator, or follow GITHUB_PREPARATION.md to train models.') from exc
+        schema=artifact['schema']; sample=csv_records(example_csv.decode('utf-8'))
+        run_prediction=lambda records, threshold: predict(artifact,records,threshold)
     lock=threading.Lock()
     class Handler(BaseHTTPRequestHandler):
         def log_message(self,format,*args): LOG.info('%s %s',self.command,self.path)
@@ -37,12 +49,12 @@ def create_server(port=8501):
         def do_GET(self):
             if not self.allowed(): return
             path=urlsplit(self.path).path
-            if path=='/api/health': self.reply(200,{'status':'ok','project':PROJECT})
-            elif path=='/api/schema': self.reply(200,{'project':PROJECT,'schema':artifact['schema'],'sample':sample[0],'summary':summary})
-            elif path=='/example.csv': self.reply(200,(OUT/'example_inputs.csv').read_bytes(),'text/csv; charset=utf-8')
-            elif path in {'/','/app.js','/style.css'}:
-                name={'/':'index.html','/app.js':'app.js','/style.css':'style.css'}[path]
-                mime={'/':'text/html','/app.js':'text/javascript','/style.css':'text/css'}[path]
+            if path=='/api/health': self.reply(200,{'status':'ok','project':PROJECT,'mode':mode})
+            elif path=='/api/schema': self.reply(200,{'project':PROJECT,'schema':schema,'sample':sample[0],'summary':summary,'mode':mode})
+            elif path=='/example.csv': self.reply(200,example_csv,'text/csv; charset=utf-8')
+            elif path in {'/','/app.js','/demo.js','/style.css'}:
+                name={'/':'index.html','/app.js':'app.js','/demo.js':'demo.js','/style.css':'style.css'}[path]
+                mime={'/':'text/html','/app.js':'text/javascript','/demo.js':'text/javascript','/style.css':'text/css'}[path]
                 self.reply(200,(ROOT/'web'/name).read_bytes(),mime+'; charset=utf-8')
             else: self.reply(404,{'error':'Not found'})
         def do_POST(self):
@@ -55,7 +67,7 @@ def create_server(port=8501):
                 payload=json.loads(self.rfile.read(length))
                 if not isinstance(payload,dict): raise ValueError('Request must be an object')
                 records=csv_records(payload['csv']) if 'csv' in payload else payload.get('records')
-                with lock: result=predict(artifact,records,payload.get('threshold'))
+                with lock: result=run_prediction(records,payload.get('threshold'))
                 self.reply(200,result)
             except (ValueError,TypeError,KeyError,OverflowError) as exc: self.reply(422,{'error':str(exc)})
             except Exception:
@@ -63,9 +75,13 @@ def create_server(port=8501):
     return ThreadingHTTPServer(('127.0.0.1',port),Handler)
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(); parser.add_argument('--port',type=int,default=8501); args=parser.parse_args()
+    parser=argparse.ArgumentParser(); parser.add_argument('--port',type=int,default=8501)
+    parser.add_argument('--demo',action='store_true',help='Run the fictional simulator without datasets or trained models')
+    args=parser.parse_args()
     logging.basicConfig(level=logging.INFO,format='%(levelname)s %(message)s')
-    server=create_server(args.port); print(f'Open http://127.0.0.1:{server.server_port}',flush=True)
+    server=create_server(args.port,demo=args.demo)
+    print('SYNTHETIC DEMO — invented formulas, not a trained model' if args.demo else 'TRAINED MODEL mode',flush=True)
+    print(f'Open http://127.0.0.1:{server.server_port}',flush=True)
     try: server.serve_forever()
     except KeyboardInterrupt: pass
     finally: server.server_close()

@@ -1,6 +1,8 @@
 # GitHub preparation and reproduction
 
-This folder is a standalone repository. No remote publication has been performed.
+This folder is a standalone repository. See the repository Actions tab for hosted CI results.
+
+For immediate use without data or training, follow [the synthetic demo guide](DEMO.md).
 
 ## What a fresh clone contains
 
@@ -27,7 +29,7 @@ py -3.13 -m venv .venv
 
 The GitHub workflow runs this synthetic test suite on Windows and Ubuntu.
 It does not certify the trained models, reproduce the studies or access private
-datasets. Hosted Actions execution remains unverified until publication.
+datasets. Initial smoke CI passed on GitHub; later changes need their own green run.
 
 ## Reproduce the complete local project
 

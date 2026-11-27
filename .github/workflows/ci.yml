@@ -24,4 +24,4 @@ jobs:
           cache-dependency-path: requirements-*.txt
       - run: python -m pip install -r requirements-dev.txt
       - run: python -m pip check
-      - run: python -m pytest tests/test_public_smoke.py -q -p no:cacheprovider
+      - run: python -m pytest tests/test_public_smoke.py tests/test_demo.py -q -p no:cacheprovider
